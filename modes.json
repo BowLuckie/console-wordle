@@ -1,4 +1,5 @@
 {
+    "debug_mode": true,
     "hard_mode": true,
-    "debug_mode": false
+    "contrast_mode": false
 }
