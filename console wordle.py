@@ -8,9 +8,9 @@ from random import choice
 from dataclasses import dataclass
 from string import ascii_lowercase
 from time import sleep
-# from json import load, dump
+from json import load, dump
 
-# i kept the json functionality in as comnments
+USE_JSON = True  
 
 # allows letter objects to be created with a char and colour attribute which are then called when rendering the stack
 @dataclass # i use a data class because the __init__ function does not need args. this is more lightweight and cleaner than a regular class
@@ -23,6 +23,17 @@ class WordleGame: # putting the game code in a class is better than excessive gl
         self.debug_mode = False # displays internal workings for debugging
         self.hard_mode = False 
         self.contrast_mode = False # if its on, colour codes become bold
+
+        if USE_JSON:
+            try:
+                with open("modes.json") as f:
+                    modes = load(f)
+                    self.debug_mode = modes.get("debug_mode", False)
+                    self.hard_mode = modes.get("hard_mode", False)
+                    self.contrast_mode = modes.get("contrast_mode", False)
+            except FileNotFoundError:
+                # if file doesn't exist, use defaults and create it
+                self.save_modes()
 
         # opens the word file and creates a list of the words to guess from
         with open("wordle-answers-alphabetical.txt") as f:
@@ -49,7 +60,7 @@ class WordleGame: # putting the game code in a class is better than excessive gl
 
 
     # colours and their escape codes
-    def style(self, normal, contrast):
+    def style(self, normal, contrast) -> str: # takes in the normal and contrast colour codes and returns the correct one based on contrast mode
         return contrast if self.contrast_mode else normal # returns the correct colour code based of contrast mode
 
     # colours can still be pretty hard to see. the nature of console based colours are also pretty limited
@@ -65,9 +76,15 @@ class WordleGame: # putting the game code in a class is better than excessive gl
 
 
     # json is opned and the dump function is used to write the modes dict back into the file
-    # def save_modes(self):
-    #     with open("modes.json", "w") as f:
-    #         dump(modes, f, indent=4)
+    def save_modes(self):
+        if USE_JSON:
+            modes = {
+                "debug_mode": self.debug_mode,
+                "hard_mode": self.hard_mode,
+                "contrast_mode": self.contrast_mode
+            }
+            with open("modes.json", "w") as f:
+                dump(modes, f, indent=4)
 
 
     # displays the stack into the console with the correct colours by looping through the objects in the stack 
@@ -111,17 +128,16 @@ class WordleGame: # putting the game code in a class is better than excessive gl
                     if mode == "debug" or mode == "debug mode":
                         self.debug_mode = not self.debug_mode # toggle mode
                         self.spec_print("debug mode: " + ("enabled" if self.debug_mode else "disabled"))
-                        # modes["debug_mode"] = debug_mode 
-                        # save_modes()
+                        self.save_modes()
                     elif mode == "hard" or mode == "hard mode":
                         self.hard_mode = not self.hard_mode
                         self.spec_print("hard mode: " + ("enabled" if self.hard_mode else "disabled"))
-                        # modes["hard_mode"] = hard_mode
-                        # save_modes()
+                        self.save_modes()
                     elif mode == "contrast" or mode == "contrast mode":
                         self.contrast_mode = not self.contrast_mode
                         self.spec_print("contrast mode: " + ("enabled" if self.contrast_mode else "disabled"))
                         self.colours = self.build_colours()
+                        self.save_modes()
                     elif mode == "back":
                         break
                     else:
@@ -137,7 +153,7 @@ class WordleGame: # putting the game code in a class is better than excessive gl
             else:
                 self.spec_print("Invalid command.")
                     
-    def colour_pass(self, guess, word_to_guess, wrong_letters):
+    def colour_pass(self, guess, word_to_guess, wrong_letters) -> tuple[list[tuple[str, str]], list[str]]:
             checked_letters = list(word_to_guess)
             result:list = [None] * 5
 
@@ -176,7 +192,7 @@ class WordleGame: # putting the game code in a class is better than excessive gl
         # loop initializations
         self.stack.clear()
         self.keyboard = {letter: None for letter in ascii_lowercase} # reload keyboard colours
-        required_positions = [None] * 5   # greens locked by index. these are refrenced by hard mode 
+        required_positions:list = [None] * 5   # greens locked by index. these are refrenced by hard mode 
         required_letters = [] # yellows that must appear somewhere
         wrong_letters = []
         word_to_guess = choice(self.word_list)
