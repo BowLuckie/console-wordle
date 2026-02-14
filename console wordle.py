@@ -1,8 +1,8 @@
 # Console wordle.py
-# Bowie Luckie
+# Bowie Luckie 
 #
-# @TODO add animations using time module?
-# @TODO fix hard mode
+# @TODO all done!
+
 
 from random import choice
 from dataclasses import dataclass
